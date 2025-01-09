@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Server</title>
+    <script>
+        let queryInProgress = false;
+
+        async function queryBackend() {
+            if (queryInProgress) return; // Prevent multiple queries at the same time
+
+            queryInProgress = true;
+            const queryCount = document.getElementById('query_count').value;
+
+            const formData = new FormData();
+            formData.append('query_count', queryCount);
+
+            // Update real-time query iteration counter
+            const interval = setInterval(async () => {
+                const iterationResponse = await fetch('/get_iteration');
+                const iterationData = await iterationResponse.json();
+                document.getElementById('iteration_count').innerText = `Query Iteration: ${iterationData.iteration}`;
+            }, 500);
+
+            // Perform the backend query
+            const response = await fetch('/query_backend', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(interval);
+            document.getElementById('iteration_count').innerText = "Query Iteration: Complete";
+
+            if (response.ok) {
+                updateTable();
+            } else {
+                alert("Failed to query the backend server.");
+            }
+
+            queryInProgress = false;
+        }
+
+        async function updateTable() {
+            const response = await fetch('/get_data');
+            if (response.ok) {
+                const data = await response.json();
+
+                const tableBody = document.getElementById('table_body');
+                tableBody.innerHTML = ""; // Clear previous table rows
+
+                let counter = 1;
+                for (const [hostname, info] of Object.entries(data)) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${counter}</td>
+                        <td>${hostname}</td>
+                        <td>${info.ip_address}</td>
+                        <td>${info.count}</td>
+                    `;
+                    tableBody.appendChild(newRow);
+                    counter++;
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Frontend Server</h1>
+    <form onsubmit="event.preventDefault(); queryBackend();">
+        <label for="query_count">Number of Queries:</label>
+        <input type="number" id="query_count" name="query_count" min="1" value="1">
+        <button type="submit">Query Backend</button>
+    </form>
+
+    <h2 id="iteration_count">Query Iteration: 0</h2>
+
+    <h2>Collected Data</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Hostname</th>
+                <th>IP Address</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody id="table_body">
+        </tbody>
+    </table>
+</body>
+</html>
