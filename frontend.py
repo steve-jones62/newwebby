@@ -35,7 +35,7 @@ def query_backend():
                     data_store[hostname]["count"] += 1
                 else:
                     data_store[hostname] = {"ip_address": ip_address, "count": 1}
-        except Exception as e:
+        except ConnectionError as e:
             print(f"Error querying backend: {e}")
 
     return jsonify({"status": "success", "data": data_store, "iteration": query_iteration})
@@ -51,4 +51,4 @@ def get_iteration():
     return jsonify({"iteration": query_iteration})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug="True", host='0.0.0.0', port=5000)

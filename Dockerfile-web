@@ -1,0 +1,24 @@
+FROM python:3.14.0a3-slim-bullseye
+
+RUN mkdir /newebby
+WORKDIR /newebby
+
+# Install updates and base requirements
+RUN apt-get update
+RUN apt-get install -y libssl-dev 
+RUN apt-get install -y build-essential
+
+# copy in Python requirements
+COPY requirements.txt /newebby
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Tier container specific content
+ADD ./static /newebby/static
+ADD ./templates /newebby/templates
+COPY frontend.py /newebby
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "/newebby/frontend.py"]
